@@ -41,12 +41,34 @@ class Particle:
         print('This function should be overwritten!')
 
     @abstractmethod
+    def calc_diameter(self) -> float:
+        print('This function should be overwritten!')
+
+    @abstractmethod
+    def calc_dipAngle(self) -> float:
+        print('This function should be overwritten!')
+
+    @abstractmethod
     def calc_elongation(self) -> float:
         print('This function should be overwritten!')
 
     @abstractmethod
     def render(self, axes):
         print('This function should be overwritten!')
+
+    # Predicates
+    @abstractmethod
+    def is_AABB_intersect(self, other, gap=0.0):
+        pass
+
+    @abstractmethod
+    def is_RECT_intersect(self, other, gap=0.0):
+        pass
+
+    @abstractmethod
+    def is_exact_intersect(self, other, gap=0.0):
+        pass
+
 
 
 class EllipseParticle(Particle):
@@ -77,11 +99,26 @@ class EllipseParticle(Particle):
     def boundingBox(self) -> float:
         return super().boundingBox()
     
+    def calc_diameter(self) -> float:
+        return super().calc_diameter()
+    
+    def calc_dipAngle(self) -> float:
+        return super().calc_dipAngle()
+    
     def calc_elongation(self) -> float:
         return super().calc_elongation()
     
     def render(self, axes):
         return super().render(axes)
+    
+    def is_AABB_intersect(self, other, gap=0.0):
+        return super().is_AABB_intersect(other)
+    
+    def is_RECT_intersect(self, other, gap=0.0):
+        return super().is_RECT_intersect(other)
+    
+    def is_exact_intersect(self, other, gap=0.0):
+        return super().is_exact_intersect(other)
 
 class PolygonParticle(Particle):
     '''Particles represented by point sets'''
@@ -89,8 +126,14 @@ class PolygonParticle(Particle):
         super().__init__()
         self.points = pts
 
-    def translate(self, dest: tuple):
-        self.points += dest
+    def centroid(self):
+        polygon = shapely.Polygon(self.points)
+        return list(polygon.centroid.coords)
+
+    def moveTo(self, dest:list):
+        polygon = shapely.Polygon(self.points)
+        origin = polygon.centroid.coords
+        self.points += (dest - origin)
     
     def rotate(self, theta):
         radian = np.radians(theta)
@@ -112,6 +155,21 @@ class PolygonParticle(Particle):
     def boundingBox(self, dist=0.0) -> tuple:
         polygon = shapely.Polygon(self.points)
         return polygon.buffer(dist).bounds
+    
+    def calc_diameter(self) -> float:
+        polygon = shapely.Polygon(self.points)
+        coords = polygon.minimum_rotated_rectangle.boundary.coords
+        a = shapely.LineString([coords[0], coords[1]]).length
+        b = shapely.LineString([coords[1], coords[2]]).length
+        return np.min([a, b])
+    
+    def calc_dipAngle(self) -> float:
+        polygon = shapely.Polygon(self.points)
+        coords = polygon.minimum_rotated_rectangle.boundary.coords
+        a = shapely.LineString([coords[0], coords[1]]).length
+        b = shapely.LineString([coords[1], coords[2]]).length
+        v = (np.array(coords[1]) - np.array(coords[0])) if a > b else (np.array(coords[2]) - np.array(coords[1]))
+        return np.degrees(np.arctan2(v[1], v[0]))
     
     def calc_elongation(self) -> float:
         polygon = shapely.Polygon(self.points)
@@ -139,17 +197,47 @@ class PolygonParticle(Particle):
     def is_valid(self) -> bool:
         polygon = shapely.Polygon(self.points)
         return polygon.is_valid
+    
+    # Predicate
+    def is_AABB_intersect(self, other, gap=0.0):
+        bbox_1 = shapely.Polygon(self.points).buffer(gap).bounds
+        bbox_2 = shapely.Polygon(other.points).buffer(gap).bounds
+        poly_1 = shapely.geometry.box(*bbox_1)
+        poly_2 = shapely.geometry.box(*bbox_2)
+        return poly_1.intersects(poly_2)
+    
+    def is_RECT_intersect(self, other, gap=0.0):
+        poly_1 = shapely.Polygon(self.points).minimum_rotated_rectangle.buffer(gap)
+        poly_2 = shapely.Polygon(other.points).minimum_rotated_rectangle.buffer(gap)
+        return poly_1.intersects(poly_2)
+    
+    def is_exact_intersect(self, other, gap=0.0):
+        poly_1 = shapely.Polygon(self.points).buffer(gap)
+        poly_2 = shapely.Polygon(other.points).buffer(gap)
+        return poly_1.intersects(poly_2)
+    
+    def is_within_domain(self, bounds:tuple):
+        polygon = shapely.Polygon(self.points)
+        boundary = shapely.geometry.box(*bounds)
+        return polygon.within(boundary)
 
-    def render(self, ax):
-       # ax.plot(self.points[:, 0], self.points[:, 1], 'b.')
+    def render(self, ax, add_bbox=False, add_rect=False):
+       #ax.plot(self.points[:, 0], self.points[:, 1], 'b.')
        polygon = shapely.Polygon(self.points)
-       min_box = polygon.minimum_rotated_rectangle
        shapely.plotting.plot_polygon(polygon, ax, add_points=False)
-       shapely.plotting.plot_polygon(min_box, ax, add_points=True, fill=False, ls='--')
+       # AABB
+       if add_bbox:
+           bbox = shapely.box(*polygon.bounds)
+           shapely.plotting.plot_polygon(bbox, ax, add_points=True, fill=False, ec='k', ls='--')
+       # RECT
+       if add_rect: 
+           rect = polygon.minimum_rotated_rectangle
+           shapely.plotting.plot_polygon(rect, ax, add_points=False, fill=False, ec='r',ls='--')
+           
+        
 
 ## Debug ##
 if __name__ == '__main__':
     print('Particle class')
-
     particle = EllipseParticle(2, 4)
     print(particle)
