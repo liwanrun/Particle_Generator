@@ -80,7 +80,7 @@ if __name__ == '__main__':
         particle.render(ax, color, add_bbox=False, add_rect=False)
 
     ax.grid(True, lw=0.5, ls='--', zorder=0)
-    plt.savefig('img\particles_group.svg', dpi=330, transparent=True)
+    plt.savefig('img\particles_group.png', dpi=330, transparent=True)
     plt.show()
 
 
