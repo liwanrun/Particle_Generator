@@ -20,7 +20,7 @@ class BackgroundGrid:
         cmax = min(int(np.ceil(maxx / self.spacing)), self.shape[1])
         cellIds = np.dstack(np.mgrid[rmin:rmax, cmin:cmax])
         cellIds = cellIds.reshape(cellIds.size//2, 2).tolist()
-        return cellIds
+        return cellIds    
     
     def assign_particle_to_cells(self, particle:Particle):
         covered_cells = self.get_incident_cells(particle)

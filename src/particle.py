@@ -1,3 +1,4 @@
+from numpy._core.multiarray import array as array
 import shapely
 import numpy as np
 import matplotlib.pyplot as plt
@@ -17,7 +18,10 @@ class Particle:
         pass
 
     @abstractmethod
-    def move_to(self, dest:tuple):
+    def moveTo(self, dest:np.array):
+        print('This function should be overwritten!')
+
+    def translate(self, vec:np.array):
         print('This function should be overwritten!')
 
     @abstractmethod
@@ -81,8 +85,11 @@ class EllipseParticle(Particle):
     def __repr__(self) -> str:
         return f'Ellipse particle: a = {self.major_rad}, b = {self.minor_rad}'
 
-    def move_to(self, dest: tuple):
+    def moveTo(self, dest: np.array):
         return super().move_to(dest)
+    
+    def translate(self, vec: np.array):
+        return super().translate(vec)
     
     def rotate(self, center: tuple, theta):
         return super().rotate(center, theta)
@@ -134,6 +141,9 @@ class PolygonParticle(Particle):
         polygon = shapely.Polygon(self.points)
         origin = polygon.centroid.coords
         self.points += (dest - origin)
+
+    def translate(self, vector: np.array):
+        self.points += vector
     
     def rotate(self, theta):
         radian = np.radians(theta)
@@ -216,23 +226,44 @@ class PolygonParticle(Particle):
         poly_2 = shapely.Polygon(other.points).buffer(gap)
         return poly_1.intersects(poly_2)
     
-    def is_within_domain(self, bounds:tuple):
+    def is_within_domain(self, bounds:tuple, tol):
         polygon = shapely.Polygon(self.points)
-        boundary = shapely.geometry.box(*bounds)
+        boundary = shapely.box(*bounds).buffer(tol)
         return polygon.within(boundary)
+    
+    def contain_domain_vertex(self, bounds:tuple):
+        polygon = shapely.Polygon(self.points)
+        coords = shapely.box(*bounds).exterior.coords[:-1]
+        for xyz in coords:
+            if polygon.contains_properly(shapely.Point(xyz)):
+                return True
+        return False
 
-    def render(self, ax, add_bbox=False, add_rect=False):
+    def intersect_domain_edge(self, bounds:tuple):
+        polygon = shapely.Polygon(self.points)
+        boundary = shapely.box(*bounds).exterior
+        coords = boundary.coords
+        for i in range(len(coords[:-1])):
+            line = shapely.LineString([coords[i], coords[i + 1]])
+            if polygon.intersects(line):
+                return True
+        return False
+
+    def render(self, ax, color, add_bbox=False, add_rect=False):
        #ax.plot(self.points[:, 0], self.points[:, 1], 'b.')
        polygon = shapely.Polygon(self.points)
-       shapely.plotting.plot_polygon(polygon, ax, add_points=False)
+       shapely.plotting.plot_polygon(polygon, ax, add_points=False, fill=True, clip_on=False, 
+                                     fc=color, ec='k', ls='-')
        # AABB
        if add_bbox:
            bbox = shapely.box(*polygon.bounds)
-           shapely.plotting.plot_polygon(bbox, ax, add_points=True, fill=False, ec='k', ls='--')
+           shapely.plotting.plot_polygon(bbox, ax, add_points=False, fill=False, clip_on=False,
+                                         fc=color, ec='k', ls='-.')
        # RECT
        if add_rect: 
            rect = polygon.minimum_rotated_rectangle
-           shapely.plotting.plot_polygon(rect, ax, add_points=False, fill=False, ec='r',ls='--')
+           shapely.plotting.plot_polygon(rect, ax, add_points=False, fill=False, clip_on=False,
+                                         fc=color, ec='r',ls='-.')
            
         
 
