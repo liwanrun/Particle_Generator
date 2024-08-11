@@ -4,14 +4,14 @@ A complex discrete fourier transform (DFT) based generator for irregular particl
 
 # Gallery
 
-![periodic boundary](.\img\particles_group.svg)
+![periodic boundary](./img/particles_group.svg)
 
 **Fig.1** Irregular particles with periodic boundary.
 
-![non-periodic boundary](.\img\particles.svg)
+![non-periodic boundary](./img/particles.svg)
 
 **Fig.2** Irregular particles with non-periodic boundary.
 
-![QFDEM model](.\img\screen.bmp "triangulation")
+![QFDEM model](./img/screen.bmp "triangulation")
 
 **Fig.3** Irregular particles with triangularion.
