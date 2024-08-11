@@ -4,7 +4,7 @@ A complex discrete fourier transform (DFT) based generator for irregular particl
 
 # Gallery
 
-![periodic boundary](./img/particles_group.png)
+![periodic boundary](./img/particles_group.svg)
 
 **Fig.1** Irregular particles with periodic boundary.
 
