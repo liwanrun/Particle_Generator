@@ -21,10 +21,10 @@ if __name__ == '__main__':
     manager = ParticleManager(doi)
     manager.background_grid = bkgGrid
     manager.minimum_gap = 0.005*(xmax - xmin)
-    manager.grading_limits = [1.0, 1.5]
+    manager.grading_limits = [0.5, 1.5]
     manager.grading_content = 0.5
     manager.boundary_periodic = True
-    # np.random.seed(20242)
+    # np.random.seed(1)
 
     ## Group 1 ##
     manager.set_particle_amplitude([0.15, 0.075, 0.005, 0.001])
@@ -32,13 +32,13 @@ if __name__ == '__main__':
     manager.set_dipAngle_parameter([10.0, 10.0])
     manager.generate_particle_group(gid = 0, max_iters=1000, max_times=100)
     ## Group 2 ##
-    # manager.set_particle_amplitude([0.25, 0.075, 0.005, 0.001])
-    # manager.set_diameter_interval([0.5, 1.0])
-    # manager.set_dipAngle_parameter([10.0, 10.0])
-    # manager.generate_particle_group(gid = 1, max_iters=1000, max_times=100)
+    manager.set_particle_amplitude([0.25, 0.075, 0.005, 0.001])
+    manager.set_diameter_interval([0.5, 1.0])
+    manager.set_dipAngle_parameter([10.0, 10.0])
+    manager.generate_particle_group(gid = 1, max_iters=1000, max_times=100)
     ## Group 3 ##
     # manager.set_particle_amplitude([0.35, 0.075, 0.005, 0.001])
-    # manager.set_diameter_interval([0.4, 0.6])
+    # manager.set_diameter_interval([0.5, 1.2])
     # manager.set_dipAngle_parameter([10.0, 10.0])
     # manager.generate_particle_group(gid = 2, max_iters=1000, max_times=100)
 
@@ -63,8 +63,8 @@ if __name__ == '__main__':
     ax.set_xlim([xmin, xmax])
     ax.set_ylim([ymin, ymax])
     ax.set_box_aspect(1.0)
-    ax.set_xlabel('X position [m]')
-    ax.set_ylabel('Y position [m]')
+    ax.set_xlabel('X [m]')
+    ax.set_ylabel('Y [m]')
     ax.set_title(f'Number of particles: {manager.get_number_of_particles()}')
     nrows, ncols = bkgGrid.shape
     ax.set_xticks(np.linspace(xmin, xmax, 11))

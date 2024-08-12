@@ -231,23 +231,25 @@ class PolygonParticle(Particle):
         boundary = shapely.box(*bounds).buffer(tol)
         return polygon.within(boundary)
     
-    def contain_domain_vertex(self, bounds:tuple):
-        polygon = shapely.Polygon(self.points)
+    def contain_domain_vertex(self, bounds:tuple, tol=0.0) -> bool:
+        polygon = shapely.Polygon(self.points).buffer(-tol)
         coords = shapely.box(*bounds).exterior.coords[:-1]
         for xyz in coords:
             if polygon.contains_properly(shapely.Point(xyz)):
                 return True
         return False
 
-    def intersect_domain_edge(self, bounds:tuple):
-        polygon = shapely.Polygon(self.points)
+    def intersect_domain_edge(self, bounds:tuple, tol=0.0) -> bool:
+        polygon = shapely.Polygon(self.points).buffer(-tol)
         boundary = shapely.box(*bounds).exterior
         coords = boundary.coords
+        num_edges = 0
         for i in range(len(coords[:-1])):
             line = shapely.LineString([coords[i], coords[i + 1]])
             if polygon.intersects(line):
-                return True
-        return False
+                num_edges += 1
+        is_intersect_edge = True if num_edges == 1 else False
+        return is_intersect_edge
 
     def render(self, ax, color, add_bbox=False, add_rect=False):
        #ax.plot(self.points[:, 0], self.points[:, 1], 'b.')

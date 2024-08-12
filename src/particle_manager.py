@@ -141,7 +141,6 @@ class ParticleManager:
             ghost.gid = particle.gid
             self._bkgGrid.assign_particle_to_cells(ghost)
             self.particleCollection.append(ghost) 
-
         return particle.calc_area()
 
     def assign_domain_edge_particles(self, particle, doi) -> float:
@@ -198,15 +197,15 @@ class ParticleManager:
                 particle.moveTo(np.array([x, y]))
                 if self._boundary_periodic:
                      if not self.has_collision(particle, self._minimum_gap):
-                        if particle.contain_domain_vertex(self.doi):
-                            # occupy_vol = self.assign_domain_vertex_particles(particle, self.doi)
-                            # remain_vol = remain_vol - occupy_vol
+                        if particle.contain_domain_vertex(self.doi, 2*self._minimum_gap):
+                            occupy_vol = self.assign_domain_vertex_particles(particle, self.doi)
+                            remain_vol = remain_vol - occupy_vol
                             break
-                        elif particle.intersect_domain_edge(self.doi):
+                        elif particle.intersect_domain_edge(self.doi, 2*self._minimum_gap):
                             occupy_vol = self.assign_domain_edge_particles(particle, self.doi)
                             remain_vol = remain_vol - occupy_vol
                             break
-                        else:
+                        elif particle.is_within_domain(self.doi, -self._minimum_gap):
                             self._bkgGrid.assign_particle_to_cells(particle)
                             self.particleCollection.append(particle)
                             remain_vol = remain_vol - particle.calc_area()
@@ -262,6 +261,7 @@ class ParticleManager:
             # physical group
             file.write('/* Add physical groups */\n')
             file.write(f'Physical Surface("block-1", newreg) = {{ Surface{{:}} }};\n')
+            file.write(f'Physical Surface("grain-1-1", newreg) = {{ Surface{{:}} }};\n')
             file.write(f'Physical Curve("constraint-1", newreg) = {{ Curve{{:}} }};\n')
             # scaling
             # file.write('/* Scale */\n')
@@ -288,17 +288,18 @@ if __name__ == '__main__':
     ax.set_xlim([xmin, xmax])
     ax.set_ylim([ymin, ymax])
     ax.set_box_aspect(1.0)
-    ax.set_xlabel('X position [m]')
-    ax.set_ylabel('Y position [m]')
+    ax.set_xlabel('X (m)')
+    ax.set_ylabel('Y (m)')
     # ax.set_title(f'Number of particles: {manager.get_number_of_particles()}')
     nrows, ncols = bkgGrid.shape
     ax.set_xticks(np.linspace(xmin, xmax, 11))
     ax.set_yticks(np.linspace(ymin, ymax, 11))
+    ax.grid(True, ls='--')
 
       # np.random.seed(7)
     particle_factory = FFTGenerator(nfreq=128)
     particle = particle_factory.generate_by_amplitude()
-    particle.render(ax, 'b')
+    particle.render(ax, 'r')
     left = PolygonParticle(particle.points.copy())
     left.translate(np.array([doi[0] - doi[2], 0.0]))
     right = PolygonParticle(particle.points.copy())
@@ -312,11 +313,12 @@ if __name__ == '__main__':
     # right.translate()
     # visualization
     left.render(ax, 'r')
-    right.render(ax, 'g')
+    right.render(ax, 'c')
     up.render(ax, 'c')
-    down.render(ax, 'm')
-    diag.render(ax, 'r')
+    down.render(ax, 'c')
+    diag.render(ax, 'c')
     plt.show()
+    fig.savefig('img\corner_boundary.svg', dpi=330, transparent=True)
 
 
 

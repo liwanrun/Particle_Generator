@@ -13,5 +13,10 @@ A complex discrete fourier transform (DFT) based generator for irregular particl
 **Fig.2** Irregular particles with non-periodic boundary.
 
 ![QFDEM model](./img/screen.bmp "triangulation")
+![gmsh](./img/particles.png)
 
 **Fig.3** Irregular particles with triangularion.
+
+![corner_bnd](./img/corner_boundary.svg)
+
+**Fig.4** Ghost particles at corners
