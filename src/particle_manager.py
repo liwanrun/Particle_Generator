@@ -16,6 +16,7 @@ class ParticleManager:
         self._minimum_gap = 0.0
         self._background_grid = None
         self._boundary_periodic = False
+        self.group_particle_sizes = [0]
 
     @property
     def grading_limits(self):
@@ -216,8 +217,9 @@ class ParticleManager:
                             self.particleCollection.append(particle)
                             remain_vol = remain_vol - particle.calc_area()
                             break 
-                          
+
         finish_vol = target_vol - remain_vol
+        self.group_particle_sizes.append(len(self.particleCollection))                 
         rprint(f'[ GROUP{gid} ] {finish_vol} of {target_vol} is finished.')
 
     ## Output
@@ -237,43 +239,44 @@ class ParticleManager:
             file.write('/* Add irregular particles */\n')
             for i, particle in enumerate(self.particleCollection):
                 for j, point in enumerate(particle.points):
-                    file.write(f'Point({j + point_off}) = {{{point[0]}, {point[1]}, 0.0, 0.1}};\n')
+                    file.write(f'Point({j + point_off}) = {{{point[0]}, {point[1]}, 0.0, lc}};\n')
                 file.write(f'BSpline({i + curve_off}) = {{{point_off}:{point_off + len(particle.points) - 1}, {point_off}}};\n')
                 file.write(f'Curve Loop({i + surface_off}) = {{{i + curve_off}}};\n')
                 file.write(f'Plane Surface({i + surface_off}) = {{{i + surface_off}}};\n')
                 point_off = point_off + len(particle.points) + 1
             curve_off = curve_off + len(self.particleCollection)
-            surface_off = curve_off + len(self.particleCollection)
+            surface_off = surface_off + len(self.particleCollection)
             # write injection
-            file.write('/* Add injection borehole */\n')
-            file.write('p_1 = newp;\n')
-            file.write(f'Point(p_1) = {{5.0, 4.9, 0.0, 1.0}};\n')
-            file.write('p_2 = newp;\n')
-            file.write(f'Point(p_2) = {{5.0, 5.1, 0.0, 1.0}};\n')
-            file.write('l_0 = newc;\n')
-            file.write(f'Line(l_0) = {{p_1, p_2}};\n')
+            # file.write('/* Add injection borehole */\n')
+            # file.write('p_1 = newp;\n')
+            # file.write(f'Point(p_1) = {{5.0, 4.9, 0.0, 1.0}};\n')
+            # file.write('p_2 = newp;\n')
+            # file.write(f'Point(p_2) = {{5.0, 5.1, 0.0, 1.0}};\n')
+            # file.write('l_0 = newc;\n')
+            # file.write(f'Line(l_0) = {{p_1, p_2}};\n')
             # write domain
             file.write('/* Add domain of interest (DOI) */\n')
             width = self.doi[2] - self.doi[0]
             height = self.doi[3] - self.doi[1]
             file.write(f'Rectangle({surface_off}) = {{{self.doi[0]}, {self.doi[1]}, 0.0, {width}, {height}, 0.0}};\n')
-            file.write(f'BooleanFragments {{ Surface{{:}}; Delete; }}{{ Curve{{:}}; Delete; }}\n')
+            # group by grading
+            physical_off = 1
+            for i in range(len(self.group_particle_sizes) - 1):
+                beg = self.group_particle_sizes[i] + 1
+                end = self.group_particle_sizes[i + 1]
+                file.write(f'Physical Surface("grain-{i + 1}-1", {physical_off + i}) = {{{beg}:{end}}};\n')
+                file.write(f'BooleanIntersection {{ Surface{{{beg}:{end}}}; Delete; }}{{ Surface{{{surface_off}}}; }}\n')
+            physical_off = physical_off + len(self.group_particle_sizes)
+            file.write(f'grains() = BooleanFragments {{ Surface{{:}}; Delete; }}{{}};\n')
             # physical group
             file.write('/* Add physical groups */\n')
-            file.write(f'Physical Surface("block-1", newreg) = {{ Surface{{:}} }};\n')
-            file.write(f'Physical Surface("grain-1-1", newreg) = {{ Surface{{:}} }};\n')
+            file.write(f'Physical Surface("grain-{physical_off - 1}-1", {physical_off - 1}) = {{ grains(#grains()-1) }};\n')
+            file.write(f'Physical Surface("block-1", {physical_off}) = {{ Surface{{:}} }};\n')
             file.write(f'Physical Curve("constraint-1", newreg) = {{ Curve{{:}} }};\n')
             # scaling
             # file.write('/* Scale */\n')
             # file.write(f'Dilate {{{{0, 0, 0}}, {{10, 10, 1}}}} {{ Point{{:}}; Curve{{:}}; Surface{{:}}; }}\n')
             # mesh size
-            tol = 1.0e-06
-            file.write('/* Set mesh size */\n')
-            file.write(f'dfnPoints[] = Point In BoundingBox {{{tol}, {tol}, 0.0, {self.doi[0] - tol}, {self.doi[1] - tol}, 0.0}};\n') 
-            file.write(f'bndPoints[] = Point{{:}};\n')
-            file.write(f'bndPoints[] -= dfnPoints[];\n')
-            file.write(f'MeshSize {{ dfnPoints[] }} = lc;\n')
-            file.write(f'MeshSize {{ bndPoints[] }} = 1.0*lc;\n')
 
 if __name__ == '__main__':
     doi = (0.0, 0.0, 10.0, 10.0)
