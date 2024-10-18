@@ -255,7 +255,7 @@ class PolygonParticle(Particle):
        #ax.plot(self.points[:, 0], self.points[:, 1], 'b.')
        polygon = shapely.Polygon(self.points)
        shapely.plotting.plot_polygon(polygon, ax, add_points=False, fill=True, clip_on=False, 
-                                     fc=color, ec='k', ls='-')
+                                     fc=color, ec='k', ls='-', lw=2.0)
        # AABB
        if add_bbox:
            bbox = shapely.box(*polygon.bounds)

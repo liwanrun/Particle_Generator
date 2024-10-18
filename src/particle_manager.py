@@ -297,7 +297,7 @@ if __name__ == '__main__':
     nrows, ncols = bkgGrid.shape
     ax.set_xticks(np.linspace(xmin, xmax, 11))
     ax.set_yticks(np.linspace(ymin, ymax, 11))
-    ax.grid(True, ls='--')
+    ax.grid(ls='--', zorder=-10)
 
       # np.random.seed(7)
     particle_factory = FFTGenerator(nfreq=128)
