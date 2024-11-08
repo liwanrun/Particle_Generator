@@ -193,7 +193,7 @@ class PolygonParticle(Particle):
     def calc_roundness(self) -> float:
         A = self.calc_area()
         P = self.calc_perimeter()
-        return 2.0*np.sqrt(np.pi * A) / P
+        return (2.0*np.sqrt(np.pi * A) / P)
 
     def calc_angularity(self) -> float:
         coords = self.points
@@ -202,7 +202,13 @@ class PolygonParticle(Particle):
         radians = np.append(radians, [radians[0]], axis=0)
         radians = np.abs(np.diff(radians, 1, axis=0))
         radians[radians > np.pi] = 2.0 * np.pi - radians[radians > np.pi]
-        return np.sum(radians) / (2.0 * np.pi) - 1.0
+        return (np.sum(radians) / (2.0 * np.pi) - 1.0)
+    
+    def calc_shape_indexes(self) -> np.array:
+        EI = self.calc_elongation()
+        RI = self.calc_roundness()
+        AI = self.calc_angularity()
+        return np.array([EI, RI, AI])
 
     def is_valid(self) -> bool:
         polygon = shapely.Polygon(self.points)
@@ -255,7 +261,7 @@ class PolygonParticle(Particle):
        #ax.plot(self.points[:, 0], self.points[:, 1], 'b.')
        polygon = shapely.Polygon(self.points)
        shapely.plotting.plot_polygon(polygon, ax, add_points=False, fill=True, clip_on=False, 
-                                     fc=color, ec='k', ls='-', lw=2.0)
+                                     fc=color, ec='k', ls='-', lw=0.5)
        # AABB
        if add_bbox:
            bbox = shapely.box(*polygon.bounds)
