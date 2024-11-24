@@ -10,6 +10,7 @@ class ParticleManager:
     def __init__(self, doi) -> None:
         self.doi = doi
         self.particleCollection = []
+        self.particleContent = 0.0
 
         self._grading_limits = None
         self._grading_content = 0.0
@@ -91,6 +92,7 @@ class ParticleManager:
         return cover_vol / total_vol
 
     def get_particle_group_content(self, di, dj, factor=0.5):
+        '''P(d) = 100(d/d_max)^n'''
         dmin, dmax = self._grading_limits
         Pmax = 100 * (dmax / dmax)**(factor)
         Pmin = 100 * (dmin / dmax)**(factor)
@@ -185,7 +187,7 @@ class ParticleManager:
         for _ in track(range(max_times)):
             # Generate particle
             particle = factory.generate_by_amplitude(A1, A3, A16, A37)
-            particle.scale(np.random.uniform(dmin, dmax) / particle.calc_diameter() )
+            particle.scale(np.random.uniform(dmin, dmax) / particle.calc_diameter()) 
             particle.rotate(np.random.normal(mean, var) - particle.calc_dipAngle())
             particle.pid = len(self.particleCollection)
             particle.gid = gid
@@ -206,12 +208,12 @@ class ParticleManager:
                             occupy_vol = self.assign_domain_edge_particles(particle, self.doi)
                             remain_vol = remain_vol - occupy_vol
                             break
-                        elif particle.is_within_domain(self.doi, -self._minimum_gap):
+                        elif particle.is_closely_within_domain(self.doi, self._minimum_gap):
                             self._bkgGrid.assign_particle_to_cells(particle)
                             self.particleCollection.append(particle)
                             remain_vol = remain_vol - particle.calc_area()
                             break 
-                elif particle.is_within_domain(self.doi, -self._minimum_gap):
+                elif particle.is_closely_within_domain(self.doi, self._minimum_gap):
                         if not self.has_collision(particle, self._minimum_gap):
                             self._bkgGrid.assign_particle_to_cells(particle)
                             self.particleCollection.append(particle)
@@ -219,6 +221,7 @@ class ParticleManager:
                             break 
 
         finish_vol = target_vol - remain_vol
+        self.particleContent += finish_vol
         self.group_particle_sizes.append(len(self.particleCollection))                 
         rprint(f'[ GROUP{gid} ] {finish_vol} of {target_vol} is finished.')
 
@@ -268,6 +271,16 @@ class ParticleManager:
                 file.write(f'BooleanIntersection {{ Surface{{{beg}:{end}}}; Delete; }}{{ Surface{{{surface_off}}}; }}\n')
             physical_off = physical_off + len(self.group_particle_sizes)
             file.write(f'grains() = BooleanFragments {{ Surface{{:}}; Delete; }}{{}};\n')
+            # delete points outside boundary
+            file.write('/* Delete points beyond boundary */\n')
+            dist_tol = 1.0e-06
+            file.write(f'outPts[] = Point {{:}};\n')
+            file.write(f'inPts[] = Point In BoundingBox {{                        \
+                       {self.doi[0]}-{dist_tol}, {self.doi[1]}-{dist_tol}, 0.0,   \
+                       {self.doi[2]}+{dist_tol}, {self.doi[3]}+{dist_tol}, 0.0}};\n')
+            file.write(f'outPts -= inPts[];\n')
+            file.write(f'Recursive Delete {{ Point {{outPts[]}};}}\n')
+            file.write(f'MeshSize {{inPts[]}} = lc;\n')
             # physical group
             file.write('/* Add physical groups */\n')
             file.write(f'Physical Surface("grain-{physical_off - 1}-1", {physical_off - 1}) = {{ grains(#grains()-1) }};\n')

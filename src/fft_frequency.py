@@ -45,7 +45,9 @@ class ParticleImageFFT:
 if __name__ == '__main__':
     import matplotlib.pyplot as plt
     from particle import PolygonParticle
-    num_freqs = 128
+    import matplotlib as mpl
+
+    num_freqs = 32
     image_path = r'img/real_05.jpg'
     FFTer = ParticleImageFFT(image_path)
     contour = FFTer.sample_contour(num_freqs)
@@ -55,18 +57,18 @@ if __name__ == '__main__':
     particle.moveTo(np.array([0.0, 0.0]))
     print(particle.calc_shape_indexes())
 
-    complex_spectrum = np.fft.fft(complex_signal)
-    random_phases = np.exp(1j * np.random.uniform(0.0, np.pi, num_freqs))
-    random_contour = np.fft.ifft(num_freqs * complex_spectrum * random_phases)
+    # complex_spectrum = np.fft.fft(complex_signal)
+    # random_phases = np.exp(1j * np.random.uniform(0.0, np.pi, num_freqs))
+    # random_contour = np.fft.ifft(num_freqs * complex_spectrum * random_phases)
 
     fig, ax = plt.subplots(nrows=1, ncols=3, figsize=(12, 4), layout='constrained')
     # ax[0].plot(contour[:, 0], contour[:, 1])
     ax[0].set_aspect(1.0)
     ax[0].set_box_aspect(1.0)
-    particle.render(ax[0], color='cyan', add_bbox=False)
-    ax[1].bar(np.fft.fftfreq(128, 1.0/128), np.abs(complex_spectrum))
-    ax[1].set_box_aspect(1.0)
-    ax[2].plot(random_contour.real, random_contour.imag, 'k-', lw=0.5)
+    particle.render(ax[0], color='cyan', add_rect=True, add_point=True)
+    # ax[1].bar(np.fft.fftfreq(128, 1.0/128), np.abs(complex_spectrum))
+    # ax[1].set_box_aspect(1.0)
+    # ax[2].plot(random_contour.real, random_contour.imag, 'k-', lw=0.5)
     ax[2].set_aspect(1.0)
     ax[2].set_box_aspect(1.0)
     fig.savefig('original_partical.svg', transparent=True)

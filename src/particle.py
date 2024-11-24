@@ -146,6 +146,7 @@ class PolygonParticle(Particle):
         self.points += vector
     
     def rotate(self, theta):
+        # dip = self.calc_dipAngle()
         radian = np.radians(theta)
         matrix = np.array([[np.cos(radian), np.sin(radian)],
                            [-np.sin(radian), np.cos(radian)]])
@@ -171,7 +172,7 @@ class PolygonParticle(Particle):
         coords = polygon.minimum_rotated_rectangle.boundary.coords
         a = shapely.LineString([coords[0], coords[1]]).length
         b = shapely.LineString([coords[1], coords[2]]).length
-        return np.min([a, b])
+        return (a + b) / 2.0# np.min([a, b])
     
     def calc_dipAngle(self) -> float:
         polygon = shapely.Polygon(self.points)
@@ -232,10 +233,15 @@ class PolygonParticle(Particle):
         poly_2 = shapely.Polygon(other.points).buffer(gap)
         return poly_1.intersects(poly_2)
     
-    def is_within_domain(self, bounds:tuple, tol):
-        polygon = shapely.Polygon(self.points)
-        boundary = shapely.box(*bounds).buffer(tol)
-        return polygon.within(boundary)
+    def is_closely_within_domain(self, bounds:tuple, tol=0.0):
+        particle = shapely.Polygon(self.points).buffer(tol)
+        boundary = shapely.box(*bounds)
+        return particle.within(boundary)
+    
+    def is_closely_cross_boundary(self, bounds:tuple, tol=0.0):
+        particle = shapely.Polygon(self.points).buffer(-tol)
+        boundary = shapely.box(*bounds)
+        return not particle.within(boundary)
     
     def contain_domain_vertex(self, bounds:tuple, tol=0.0) -> bool:
         polygon = shapely.Polygon(self.points).buffer(-tol)
@@ -256,11 +262,15 @@ class PolygonParticle(Particle):
                 num_edges += 1
         is_intersect_edge = True if num_edges == 1 else False
         return is_intersect_edge
+    
+    def contain_point(self, xyz, tol=0.0) -> bool:
+        polygon = shapely.Polygon(self.points).buffer(tol)
+        return polygon.contains_properly(shapely.Point(xyz))
 
-    def render(self, ax, color, add_bbox=False, add_rect=False):
+    def render(self, ax, color, add_bbox=False, add_rect=False, add_point=False):
        #ax.plot(self.points[:, 0], self.points[:, 1], 'b.')
        polygon = shapely.Polygon(self.points)
-       shapely.plotting.plot_polygon(polygon, ax, add_points=False, fill=True, clip_on=False, 
+       shapely.plotting.plot_polygon(polygon, ax, add_points=add_point, fill=True, clip_on=False, 
                                      fc=color, ec='k', ls='-', lw=0.5)
        # AABB
        if add_bbox:

@@ -8,6 +8,7 @@ class BackgroundGrid:
         self.shape = (m, n)
         self.spacing = spacing
         self.allocParticleIds = [[[] for _ in range(m)] for _ in range(n)]
+        self.doi = doi
 
     def __repr__(self) -> str:
         print(f'Backgroud grid shape = {self.shape}.')
@@ -31,4 +32,16 @@ class BackgroundGrid:
 
 ## Debug
 if __name__ == '__main__':
-    pass
+    doi = (0.0, 0.0, 10.0, 10.0)
+    grid = BackgroundGrid(doi = doi)
+    grid.create_seed_points(spacing = 0.5)
+    # print(grid.seedPoints)
+    seed = grid.sample_random_seed()
+    print(seed)
+  
+    # Visualization
+    fig, ax = plt.subplots(nrows=1, ncols=1, layout='constrained')
+    ax.plot(grid.seedPoints[:,:,0], grid.seedPoints[:, :, 1], 'bo')
+    ax.plot(seed[0], seed[1], 'ro')
+    ax.set_aspect(1.0)
+    plt.show()

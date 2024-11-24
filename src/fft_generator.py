@@ -13,9 +13,9 @@ class FFTGenerator:
     def generate_by_amplitude(self, A1=0.25, A3=0.075, A16=0.005, A37=0.0001):
         # normalized frequencies
         self.spectrum[-2] = 0.0
-        self.spectrum[-1] = 1.0     # A1 < 0.5        
+        self.spectrum[-1] = 1.0          
         self.spectrum[0] = 0.0      
-        self.spectrum[1] = A1         
+        self.spectrum[1] = A1       # A1 < 0.5      
         # positive frequencies     
         self.spectrum[2] = A3       # A3 < 0.15
         self.spectrum[3:15] = np.power(2.0, -2.0*np.log2(np.arange(3, 15)/(2)) + np.log2(A3)) if A3 > 0.0 else 0.0
@@ -31,9 +31,10 @@ class FFTGenerator:
         self.spectrum[-37] = A37
         self.spectrum[-38:-65:-1] = np.power(2.0, -2.0*np.log2(np.arange(-38, -65, -1)/(-37)) + np.log2(A37)) if A37 > 0.0 else 0.0
 
+        rng = np.random.default_rng()
         while True:
             nfreqs = len(self.spectrum)
-            phases = np.exp(1j*np.random.uniform(-np.pi, np.pi, 128))
+            phases = np.exp(1j*rng.uniform(-np.pi, np.pi, 128))
             signal = np.fft.ifft(nfreqs * self.spectrum * phases)
             points = np.vstack((signal.real, signal.imag)).T
             particle = PolygonParticle(points)
@@ -63,7 +64,7 @@ if __name__ == '__main__':
     ax1.set_aspect(1.0)
     ax1.set_box_aspect(1.0)
 
-    np.random.seed(5)
+    np.random.seed(2)
     num_freqs = 128
     particle_factory = FFTGenerator(nfreq=num_freqs)
     #A2, A3, A16, A37 = 0.25, 0.075, 0.005, 0.0005
@@ -77,7 +78,7 @@ if __name__ == '__main__':
     print(f'Particle Elongation Index (EI): {particle.calc_elongation()}')
     print(f'Particle Roundness Index (RI): {particle.calc_roundness()}')
     print(f'Particle Angularity Index (AI): {particle.calc_angularity()}')
-    print(particle.is_within_domain((-2.0, -2.0, 2.0, 2.0), tol=0.0))
+    print(particle.is_closely_within_domain((-2.0, -2.0, 2.0, 2.0), tol=0.0))
     print(f'Particle Shape Indexes: {particle.calc_shape_indexes()}')
     # visualization
     particle.render(ax1, 'cyan', add_rect=True)
