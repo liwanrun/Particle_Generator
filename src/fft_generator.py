@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from particle import *
+from fft_frequency import ParticleImageFFT
 import rich
 
 class FFTGenerator:
@@ -44,6 +45,16 @@ class FFTGenerator:
     def generate_by_mophology(self, EI, RI, AI):
         pass
 
+    def generate_by_pictures(self, fname:str) -> PolygonParticle:
+        sampler = ParticleImageFFT(fname)
+        contour = sampler.sample_contour()
+        signal = contour[:, 0] + 1j*contour[:, 1]
+        points = np.vstack((signal.real, signal.imag)).T
+        particle = PolygonParticle(points)
+        diameter = particle.calc_diameter()
+        particle.scale(2.0 / diameter)
+        return particle
+
 ## Debug ##
 if __name__ == '__main__':
     import matplotlib
@@ -55,6 +66,7 @@ if __name__ == '__main__':
     plt.rc('text', usetex=True)
     plt.rc('font', family='serif', serif=['Times'])
     plt.rcParams['text.latex.preamble'] = r'\usepackage{amsmath}'
+    plt.style.use('seaborn-v0_8')
 
     fig, ax1 = plt.subplots(nrows=1, ncols=1, layout='constrained')
     ax1.set_xlim([-2.0, 2.0])
@@ -95,7 +107,8 @@ if __name__ == '__main__':
     #ax2.set_box_aspect(1.0)
     a[0].set_xlim([-64, 63])
     a[0].set_ylim([0.0, 1.0])
-    a[0].set_ylabel('Magnitude')
+    a[0].set_title(r'Fourier spectrum', fontsize=16)
+    a[0].set_ylabel('Magnitude', fontsize=14)
     a[0].set_xticks([-64, -37, -16, -3, 2, 15, 36, 63])
     a[0].set_yticks(np.arange(0.0, 1.2, 0.20))
     a[0].text(x=50, y=0.5, s=r'\begin{align*} A_{-2} &= 0.0 \\ A_{-1} &= 1.0 \\ A_{0} &= 0.0 \\ A_{1} &= 0.25 \end{align*',
@@ -106,7 +119,7 @@ if __name__ == '__main__':
     a[1].set_xlim([-64, 63])
     a[1].set_ylim([0.0, 0.1])
  #   a[1].set_xlabel('Frequency')
-    a[1].set_ylabel('Magnitude')
+    a[1].set_ylabel('Magnitude', fontsize=14)
     a[1].set_xticks([-64, -37, -16, -3, 2, 15, 36, 63])
     a[1].set_yticks(np.linspace(0.0, 0.10, 6))
     a[1].ticklabel_format(style='sci', axis='y', scilimits=(0,1))
@@ -114,13 +127,13 @@ if __name__ == '__main__':
     x_3 = np.arange(-3, -16, -1); y_3 = np.power(2.0, -2.0*np.log2(np.arange(-3, -16, -1)/(-3)) + np.log2(A3)); y_3[0] = A3
     a[1].plot(x2, y2, 'r', lw=2.0, label=r'$ A_{n} = 2^{-2 \times log_{2} (n/2) + log_{2}A_{2}} $')
     a[1].plot(x_3, y_3, 'k', lw=2.0, label=r'$ A_{n} = 2^{-2 \times log_{2} (n/-3) + log_{2}A_{-3}} $')
-    a[1].legend(frameon=False)
+    a[1].legend(frameon=False, fontsize=14)
 
     a[2].bar(np.fft.fftfreq(num_freqs, 1.0/num_freqs), np.abs(freq))
     a[2].set_xlim([-64, 63])
     a[2].set_ylim([0.0, 0.01])
 #    a[2].set_xlabel('Frequency')
-    a[2].set_ylabel('Magnitude')
+    a[2].set_ylabel('Magnitude', fontsize=14)
     a[2].set_xticks([-64, -37, -16, -3, 2, 15, 36, 63])
     a[2].set_yticks(np.linspace(0.0, 0.010, 6))
     a[2].ticklabel_format(style='sci', axis='y', scilimits=(0,1))
@@ -128,13 +141,13 @@ if __name__ == '__main__':
     x_16 = np.arange(-16, -37, -1); y_16 = np.power(2.0, -2.0*np.log2(np.arange(-16, -37, -1)/(-16)) + np.log2(A16)); y_16[0] = A16
     a[2].plot(x15, y15, 'r', lw=2.0, label=r'$ A_{n} = 2^{-2 \times log_{2} (n/15) + log_{2}A_{15}} $')
     a[2].plot(x_16, y_16, 'k', lw=2.0, label=r'$ A_{n} = 2^{-2 \times log_{2} (n/-16) + log_{2}A_{-16}} $')
-    a[2].legend(frameon=False)
+    a[2].legend(frameon=False, fontsize=14)
 
     a[3].bar(np.fft.fftfreq(num_freqs, 1.0/num_freqs), np.abs(freq))
     a[3].set_xlim([-64, 63])
     a[3].set_ylim([0.0, 0.0015])
-    a[3].set_xlabel('Frequency')
-    a[3].set_ylabel('Magnitude')
+    a[3].set_xlabel('Frequency', fontsize=14)
+    a[3].set_ylabel('Magnitude', fontsize=14)
     a[3].set_xticks([-64, -37, -16, -3, 2, 15, 36, 63])
     a[3].set_yticks(np.linspace(0.0, 0.0015, 6))
     a[3].ticklabel_format(style='sci', axis='y', scilimits=(0,1))
@@ -142,7 +155,7 @@ if __name__ == '__main__':
     x_37 = np.arange(-37, -65, -1); y_37 = np.power(2.0, -2.0*np.log2(np.arange(-37, -65, -1)/(-37)) + np.log2(A37)); y_37[0] = A37
     a[3].plot(x36, y36, 'r', lw=2.0, label=r'$ A_{n} = 2^{-2 \times log_{2} (n/36) + log_{2}A_{36}} $')
     a[3].plot(x_37, y_37, 'k', lw=2.0, label=r'$ A_{n} = 2^{-2 \times log_{2} (n/-37) + log_{2}A_{-37}} $')
-    a[3].legend(frameon=False, loc='upper right')
+    a[3].legend(frameon=False, loc='upper right', fontsize=14)
 
-    f.savefig('frequency.svg', transparent=True)
+    f.savefig('frequency.svg', transparent=False)
     plt.show()

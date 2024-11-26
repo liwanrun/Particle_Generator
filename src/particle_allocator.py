@@ -32,11 +32,12 @@ class ParticleAllocator:
         xx, yy = np.meshgrid(x, y)
         self.seedPoints = np.stack((xx, yy), axis=-1, dtype = float)
         self.seedStates = np.zeros((m+1, n+1), dtype=bool)
+        self.seedStates[m//2, n//2] = True        # exclude central point for injection
         self.seed_spacing = spacing
 
     def sample_seed_point(self, idx:int, candidates:np.array) -> np.array:
         if self._periodic_boundary:
-            any_corner = np.array([10.0, 0.0])
+            any_corner = np.array([0.0, 0.0])
             seed_point = any_corner if not len(self.particleArr) else candidates[idx]
             return seed_point
         else:
@@ -200,11 +201,12 @@ class ParticleAllocator:
         factory = FFTGenerator(nfreq=128)
         for _ in track(range(max_times)):
             # Generate particle
-            particle = factory.generate_by_amplitude(A1, A3, A16, A37)
+            # particle = factory.generate_by_amplitude(A1, A3, A16, A37)
+            particle = factory.generate_by_pictures(fname=r'img/real_01.jpg')
             corner_vol = particle.calc_area()
             dia = particle.calc_diameter()
             dip = particle.calc_dipAngle()
-            rng = np.random.default_rng(0)
+            rng = np.random.default_rng()
             particle.scale(rng.uniform(d1, d2) / dia)
             particle.rotate(rng.normal(mu, sig) - dip)
             particle.pid = len(self.particleArr)
@@ -501,17 +503,17 @@ if __name__ == '__main__':
     #alloc.test_shapely()
 
     # Group parameters
-    output_file = r'DD=45.0'
+    output_file = r'gravel_2'
     ## Group 1
-    alloc.set_group_spectrum(A1=0.50, A3=0.020, A16=0.001, A37=0.0000)
+    alloc.set_group_spectrum(A1=0.10, A3=0.020, A16=0.001, A37=0.0000)
     alloc.set_group_sizes(dmin=0.6, dmax=1.0)
-    alloc.set_group_dips(mean=45.0, var=2)
+    alloc.set_group_dips(mean=45.0, var=90)
     alloc.allocate_particle_group(gid=0, max_iters=1000, max_times=100)
 
     ## Group 2
-    alloc.set_group_spectrum(A1=0.50, A3=0.020, A16=0.001, A37=0.0000)
+    alloc.set_group_spectrum(A1=0.10, A3=0.020, A16=0.001, A37=0.0000)
     alloc.set_group_sizes(dmin = 0.4, dmax=0.6)
-    alloc.set_group_dips(mean=45.0, var=2)
+    alloc.set_group_dips(mean=45.0, var=90)
     alloc.allocate_particle_group(gid=1, max_iters=1000, max_times=100)
     ## Group 3
 
@@ -531,8 +533,8 @@ if __name__ == '__main__':
     fig, ax = plt.subplots(nrows=1, ncols=1, layout='constrained')
     ax.set_aspect(1.0)
     ax.set_box_aspect(1.0)
-    #ax.set_title(f'Particle Volume: {alloc.particleVol:.2f} ({100*percentage:.2f}$\%$)')
-    ax.set_title(f'Particle Number: {len(alloc.particleArr)}')
+    ax.set_title(f'Particle Volume: {alloc.particleVol:.2f} ({100*percentage:.2f}$\%$)')
+    #ax.set_title(f'Particle Number: {len(alloc.particleArr)}')
     ax.set_xlim([doi[0], doi[2]])
     ax.set_ylim([doi[1], doi[3]])
     ax.plot(xx, yy, 'ko', markersize=0.5)
@@ -540,13 +542,13 @@ if __name__ == '__main__':
         #origin = particle.centroid()[0]
         #ax.text(origin[0], origin[1], f'{particle.pid}',color='k')
         particle.render(ax, color='C0', add_bbox=False, add_rect=False)
-    plt.savefig(f'Orientation\{output_file}.svg', dpi=330, transparent=True)
+    plt.savefig(f'Interface\{output_file}.svg', dpi=330, transparent=True)
     plt.show()
     
     ## Output for Gmsh
     #alloc.write_gmsh_model(f'Elongation\{output_file}.geo')
     #alloc.export_gmsh_geo_file(f'Elongation\particles.geo')
-    alloc.mesh_with_gmsh(f'Orientation\{output_file}.msh')
+    alloc.mesh_with_gmsh(f'Interface\{output_file}.msh')
 
 
 
